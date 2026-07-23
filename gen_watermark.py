@@ -90,8 +90,8 @@ logger = get_logger(__name__)
 hyperparameters = {
     "learning_rate": 5e-04,
     "scale_lr": True,
-    "max_train_steps": 2000, 
-    "save_steps": 500,
+    "max_train_steps": 50, 
+    "save_steps": 10,
     "train_batch_size": 1,
     "gradient_accumulation_steps": 1,
     "gradient_checkpointing": True,
@@ -115,7 +115,7 @@ def main(args):
         args.model_id,
         scheduler=scheduler,
         torch_dtype=torch.float16,
-        revision='fp16',
+        revision='main',
         )
     pipe = pipe.to(device)
 

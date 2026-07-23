@@ -216,7 +216,17 @@ def get_dataset(args):
             prompt_key = 'caption'
     else:
         # dataset = load_dataset(args.dataset)['test']
-        dataset = load_dataset("parquet", data_files={'train': '/mnt/data/datasets/Gustavosta/Stable-Diffusion-Prompts/data/train.parquet', 'test': '/mnt/data/datasets/Gustavosta/Stable-Diffusion-Prompts/data/eval.parquet'})['test']
+        #dataset = load_dataset("parquet", data_files={'train': '/mnt/data/datasets/Gustavosta/Stable-Diffusion-Prompts/data/train.parquet', 'test': '/mnt/data/datasets/Gustavosta/Stable-Diffusion-Prompts/data/eval.parquet'})['test']
+        #prompt_key = 'Prompt'
+
+         # Local fallback prompts for testing on this PC
+        dataset = [
+            {"Prompt": "a photo of a red bicycle in a park"},
+            {"Prompt": "a scenic mountain lake at sunrise"},
+            {"Prompt": "a cute dog sitting on grass"},
+            {"Prompt": "a city skyline at sunset"},
+            {"Prompt": "a modern chair in a room"},
+        ]
         prompt_key = 'Prompt'
 
     return dataset, prompt_key

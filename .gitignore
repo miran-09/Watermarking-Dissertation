@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+venv/
+
+# VS Code
+.vscode/
+
+# Generated outputs
+clean_images/
+generated_imgs/
+logs/
+output/
+
+# Model checkpoints
+ckpts/
+
+# Temporary files
+tmp_*.jpg
+
+# Large model files
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+
+# Hugging Face cache
+.cache/

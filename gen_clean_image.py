@@ -20,7 +20,7 @@ def main(args):
         args.model_id,
         scheduler=scheduler,
         torch_dtype=torch.float16,
-        revision='fp16',
+        revision='main',
         )
     pipe = pipe.to(device)
 
