@@ -1,4 +1,4 @@
-
+﻿
 from typing import Callable, List, Optional, Union, Any, Dict
 import copy
 import os
@@ -117,7 +117,7 @@ class ROBINStableDiffusionPipeline(StableDiffusionPipeline):
             num_images_per_prompt (`int`, *optional*, defaults to 1):
                 The number of images to generate per prompt.
             eta (`float`, *optional*, defaults to 0.0):
-                Corresponds to parameter eta (η) in the DDIM paper: https://arxiv.org/abs/2010.02502. Only applies to
+                Corresponds to parameter eta (Î·) in the DDIM paper: https://arxiv.org/abs/2010.02502. Only applies to
                 [`schedulers.DDIMScheduler`], will be ignored for others.
             generator (`torch.Generator`, *optional*):
                 One or a list of [torch generator(s)](https://pytorch.org/docs/stable/generated/torch.Generator.html)
@@ -197,7 +197,7 @@ class ROBINStableDiffusionPipeline(StableDiffusionPipeline):
         latents_wm = None
         text_embeddings_opt = None
         num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
-        
+
         start_time = time.time()
         with self.progress_bar(total=num_inference_steps) as progress_bar:
             for i, t in enumerate(timesteps):
@@ -205,7 +205,7 @@ class ROBINStableDiffusionPipeline(StableDiffusionPipeline):
                     mask = watermarking_mask  # mask from outside
                     if i == watermarking_steps:
                         latents_wm = inject_watermark(latents, mask,gt_patch, args)  # inject latent watermark
-                        inner_latents[-1] = latents_wm  
+                        inner_latents[-1] = latents_wm
                         if opt_acond is not None:
                             uncond, cond = text_embeddings.chunk(2)
                             opt_acond = opt_acond.to(cond.dtype)
@@ -213,7 +213,7 @@ class ROBINStableDiffusionPipeline(StableDiffusionPipeline):
                         else:
                             text_embeddings_opt = text_embeddings.clone()
                         if lguidance is not None:
-                            guidance_scale = lguidance  
+                            guidance_scale = lguidance
 
                     latents_wm, _ = self.xn1_latents_3(latents_wm,do_classifier_free_guidance,t
                                                             ,text_embeddings_opt,guidance_scale,**extra_step_kwargs)
@@ -227,15 +227,15 @@ class ROBINStableDiffusionPipeline(StableDiffusionPipeline):
                     progress_bar.update()
                     if callback is not None and i % callback_steps == 0:
                         callback(i, t, latents)
-                
+
                 if (watermarking_steps is not None and i < watermarking_steps) or (watermarking_steps is None):
                     inner_latents.append(latents)   # save for memory
-                else: 
+                else:
                     inner_latents.append(latents_wm)
 
                 if watermarking_steps is not None and watermarking_steps == 50:
                     latents_wm = inject_watermark(latents, watermarking_mask,gt_patch, args)  # inject latent watermark
-                    inner_latents[-1] = latents_wm  
+                    inner_latents[-1] = latents_wm
 
         end_time = time.time()
         execution_time = end_time - start_time
@@ -258,7 +258,7 @@ class ROBINStableDiffusionPipeline(StableDiffusionPipeline):
             return ROBINStableDiffusionPipelineOutput(images=image, nsfw_content_detected=has_nsfw_concept, init_latents=init_latents, latents=latents, inner_latents=inner_latents,gt_patch=gt_patch,opt_acond=text_embeddings_opt[0],time=execution_time)
         else:
             return ROBINStableDiffusionPipelineOutput(images=image, nsfw_content_detected=has_nsfw_concept, init_latents=init_latents, latents=latents, inner_latents=inner_latents,gt_patch=gt_patch,time=execution_time)
-        
+
 
     def optimizer_wm_prompt(self, dataloader,hyperparameters, mask,opt_wm,save_path,args,
                             generator: Optional[Union[torch.Generator, List[torch.Generator]]] = None,
@@ -300,7 +300,7 @@ class ROBINStableDiffusionPipeline(StableDiffusionPipeline):
 
         unet, text_encoder, dataloader,text_embeddings = accelerator.prepare(
             unet, text_encoder, dataloader, text_embeddings
-        ) 
+        )
 
         weight_dtype = torch.float32
         if accelerator.mixed_precision == "fp16":
@@ -317,7 +317,7 @@ class ROBINStableDiffusionPipeline(StableDiffusionPipeline):
         # Keep unet in train mode to enable gradient checkpointing
         unet.train()
 
-        
+
         # We need to recalculate our total training steps as the size of the training dataloader may have changed.
         num_update_steps_per_epoch = math.ceil(len(dataloader) / gradient_accumulation_steps)
         num_train_epochs = math.ceil(max_train_steps / num_update_steps_per_epoch)
@@ -338,7 +338,7 @@ class ROBINStableDiffusionPipeline(StableDiffusionPipeline):
 
         scaler = GradScaler()
         # self.scheduler.set_timesteps(1000)  # need for compute the next state
-        
+
         opt_wm_embedding = self.get_text_embedding('')
         null_embedding = opt_wm_embedding.clone()
         total_time = 0
@@ -351,38 +351,38 @@ class ROBINStableDiffusionPipeline(StableDiffusionPipeline):
                         image = 2.0 * gt_tensor - 1.0
                         latents = vae.encode(image.to(dtype=weight_dtype)).latent_dist.sample().detach()
                         latents = latents * 0.18215
-                       
+
                         # Sample noise that we'll add to the latents
                         noise = torch.randn_like(latents)
                         bsz = latents.shape[0]
                         # Sample a random timestep for each image
-                        timesteps = torch.randint(200, 300, (bsz,), device=latents.device).long()  # 35～40steps
+                        timesteps = torch.randint(200, 300, (bsz,), device=latents.device).long()  # 35ï½ž40steps
 
                         # Add noise to the latents according to the noise magnitude at each timestep
                         # (this is the forward diffusion process)
                         noisy_latents = scheduler.add_noise(latents, noise, timesteps)
                         opt_wm = opt_wm.to(noisy_latents.device).to(torch.complex64)  # add wm to latents
-                        
+
                         ### detailed the inject_watermark function for fft.grad
                         init_latents_w_fft = torch.fft.fftshift(torch.fft.fft2(noisy_latents), dim=(-1, -2))
                         init_latents_w_fft[mask] = opt_wm[mask].clone()
                         init_latents_w_fft.requires_grad = True
                         noisy_latents = torch.fft.ifft2(torch.fft.ifftshift(init_latents_w_fft, dim=(-1, -2))).real
 
-                        ### Get the text embedding for conditioning CFG 
+                        ### Get the text embedding for conditioning CFG
                         prompt = batch["prompt"]
                         # # print(f'prompt: {prompt}')
                         cond_embedding = self.get_text_embedding(prompt)
-                        text_embeddings = torch.cat([opt_wm_embedding, cond_embedding, null_embedding]) 
+                        text_embeddings = torch.cat([opt_wm_embedding, cond_embedding, null_embedding])
                         text_embeddings.requires_grad = True
 
-                        ### Predict the noise residual with CFG 
+                        ### Predict the noise residual with CFG
                         latent_model_input = torch.cat([noisy_latents] * 3)
                         latent_model_input = scheduler.scale_model_input(latent_model_input, timesteps)
                         noise_pred = unet(latent_model_input, timesteps, encoder_hidden_states=text_embeddings).sample
                         noise_pred_wm, noise_pred_text, noise_pred_null = noise_pred.chunk(3)
                         noise_pred = noise_pred_null + 3.5 * (noise_pred_text - noise_pred_null) + 3.5 * (noise_pred_wm - noise_pred_null)   # different guidance scale
-                        
+
                         ### get the predicted x0 tensor
                         x0_latents = scheduler.convert_model_output(noise_pred,timesteps.item(),noisy_latents)  #predict x0 in one-step
                         x0_tensor = self.decode_latents_wgrad(x0_latents)
@@ -395,7 +395,7 @@ class ROBINStableDiffusionPipeline(StableDiffusionPipeline):
                         if (global_step // 500) % 2 == 0:
                             loss = 10 * loss_noise + loss_constrain - 0.00001 * loss_wm  # opt wm pattern
                             accelerator.backward(loss)
-                            with torch.no_grad():  
+                            with torch.no_grad():
                                 grads = init_latents_w_fft.grad
                                 init_latents_w_fft = init_latents_w_fft - 1.0 * grads  # update wm pattern
                                 init_latents_w_fft = to_ring(init_latents_w_fft, args)
@@ -403,9 +403,9 @@ class ROBINStableDiffusionPipeline(StableDiffusionPipeline):
                         else:
                             loss = 10 * loss_noise + loss_constrain  # opt prompt
                             accelerator.backward(loss)
-                            with torch.no_grad():  
+                            with torch.no_grad():
                                 grads = text_embeddings.grad
-                                text_embeddings = text_embeddings - 5e-04 * grads  
+                                text_embeddings = text_embeddings - 5e-04 * grads
                                 opt_wm_embedding = text_embeddings[0].unsqueeze(0).detach()  # update acond embedding
 
 
@@ -415,9 +415,22 @@ class ROBINStableDiffusionPipeline(StableDiffusionPipeline):
                     if accelerator.sync_gradients:
                         progress_bar.update(1)
                         global_step += 1
+
                         if global_step % hyperparameters["save_steps"] == 0:
                             path = os.path.join(save_path, f"optimized_wm5-30_embedding-step-{global_step}.pt")
-                            torch.save({'opt_acond': opt_wm_embedding, 'opt_wm': opt_wm.cpu()}, path)
+                            torch.save(
+                                {
+                                    "prompt": prompt,
+                                    "cond_embedding": cond_embedding.detach().cpu(),
+                                    "opt_acond": opt_wm_embedding.detach().cpu(),
+                                    "opt_wm": opt_wm.detach().cpu(),
+                                },
+                                path,
+                            )
+
+                        #if global_step % hyperparameters["save_steps"] == 0:
+                         #   path = os.path.join(save_path, f"optimized_wm5-30_embedding-step-{global_step}.pt")
+                          #  torch.save({'opt_acond': opt_wm_embedding, 'opt_wm': opt_wm.cpu()}, path)
 
                     logs = {"loss": loss.detach().item()}
                     progress_bar.set_postfix(**logs)
@@ -441,7 +454,7 @@ class ROBINStableDiffusionPipeline(StableDiffusionPipeline):
         latents = self.scheduler.step(noise_pred, t, latents, **extra_step_kwargs).prev_sample
 
         return latents, noise_pred
-    
+
     def xn1_latents_3(self,latents,do_classifier_free_guidance,t
                         ,text_embeddings,guidance_scale,**extra_step_kwargs):
         latent_model_input = torch.cat([latents] * 3) if do_classifier_free_guidance else latents
@@ -453,7 +466,7 @@ class ROBINStableDiffusionPipeline(StableDiffusionPipeline):
         latents = self.scheduler.step(noise_pred, t, latents, **extra_step_kwargs).prev_sample
 
         return latents, noise_pred
-    
+
     def decode_latents_wgrad(self, latents):
         latents = 1 / 0.18215 * latents
         image = self.vae.decode(latents, return_dict=False)[0]
@@ -480,7 +493,7 @@ class ROBINStableDiffusionPipeline(StableDiffusionPipeline):
             args = None,
             gt_patch = None,
         ):
-        
+
             # 0. Default height and width to unet
             height = height or self.unet.config.sample_size * self.vae_scale_factor
             width = width or self.unet.config.sample_size * self.vae_scale_factor
@@ -544,10 +557,10 @@ class ROBINStableDiffusionPipeline(StableDiffusionPipeline):
 
             # 7. Denoising loop
             num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
-            with torch.no_grad(): 
+            with torch.no_grad():
                 with self.progress_bar(total=num_inference_steps) as progress_bar:
                     for i, t in enumerate(timesteps):
-                        
+
                         # compute watermark noise
                         if (watermarking_steps is not None) and (i == watermarking_steps):
                             latents_wm = inject_watermark(latents, mask,gt_patch, args)
@@ -596,7 +609,7 @@ class ROBINStableDiffusionPipeline(StableDiffusionPipeline):
                             if callback is not None and i % callback_steps == 0:
                                 callback(i, t, latents)
 
-                        
+
 
                         if latents_wm is not None:
                             ### watermark both conditional and unconditional
@@ -615,7 +628,7 @@ class ROBINStableDiffusionPipeline(StableDiffusionPipeline):
                             # perform guidance
                             if do_classifier_free_guidance:
                                 noise_pred_uncond_wm, noise_pred_text_wm = noise_pred_wm.chunk(2)
-                                noise_pred_wm = noise_pred_uncond_wm + guidance_scale * (noise_pred_text_wm - noise_pred_uncond_wm)  
+                                noise_pred_wm = noise_pred_uncond_wm + guidance_scale * (noise_pred_text_wm - noise_pred_uncond_wm)
                                 # noise_pred_wm = noise_pred_uncond_wm + 0.0 * (noise_pred_text_wm - noise_pred_uncond_wm)  # decrease the guidance_scale
 
                             # compute cos_sim between ori and ori_wm
@@ -625,7 +638,7 @@ class ROBINStableDiffusionPipeline(StableDiffusionPipeline):
                             guidance_sim_wm.append(cosine_distance(noise_pred_wm-noise_pred_uncond_wm, noise_pred-noise_pred_uncond).mean().item())
                             latents_sim_wm.append(cosine_distance(latents_wm, latents).mean().item())
                             freq_sim_wm.append(fcosine_distance(latents_wm, latents).mean().item())
-       
+
                             # compute the previous noisy sample x_t -> x_t-1
                             latents_wm = self.scheduler.step(noise_pred_wm, t, latents_wm, **extra_step_kwargs).prev_sample
 
@@ -660,7 +673,7 @@ class ROBINStableDiffusionPipeline(StableDiffusionPipeline):
             args = None,
             gt_patch = None,
         ):
-        
+
             # 0. Default height and width to unet
             height = height or self.unet.config.sample_size * self.vae_scale_factor
             width = width or self.unet.config.sample_size * self.vae_scale_factor
@@ -707,17 +720,17 @@ class ROBINStableDiffusionPipeline(StableDiffusionPipeline):
 
             # 7. Denoising loop
             num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
-            with torch.no_grad(): 
+            with torch.no_grad():
                 with self.progress_bar(total=num_inference_steps) as progress_bar:
                     for i, t in enumerate(timesteps):
-                        
+
                         # compute watermark noise
                         if (watermarking_steps is not None) and (i == watermarking_steps):
                             latents = inject_watermark(latents, mask,gt_patch, args)
 
                         # evaluate watermark persistence
                         if (watermarking_steps is not None)and (i >= watermarking_steps):
-                            freq_latents = torch.fft.fftshift(torch.fft.fft2(latents), dim=(-1, -2)).real 
+                            freq_latents = torch.fft.fftshift(torch.fft.fft2(latents), dim=(-1, -2)).real
                             wm_nmse.append(error_nmse(gt_patch[mask].real, freq_latents[mask]))
 
                         # expand the latents if we are doing classifier free guidance
@@ -741,9 +754,9 @@ class ROBINStableDiffusionPipeline(StableDiffusionPipeline):
                             if callback is not None and i % callback_steps == 0:
                                 callback(i, t, latents)
 
-                    
+
             ### only for compute nmse for clean latents
-            freq_latents = torch.fft.fftshift(torch.fft.fft2(latents), dim=(-1, -2)).real 
+            freq_latents = torch.fft.fftshift(torch.fft.fft2(latents), dim=(-1, -2)).real
             wm_nmse.append(error_nmse(gt_patch[mask].real, freq_latents[mask]))
             return wm_nmse
 

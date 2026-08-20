@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="luxury-hero">
+    <div class="luxury-kicker">Verify Image</div>
+    <h1>Verify Image Authenticity</h1>
+    <p>
+        Upload an image and check whether the ROBIN watermark is detectable.
+        You can also inspect its Image Signature for source information and image integrity.
+    </p>
+</section>
+
+<section class="generate-shell">
+
+    <!-- LEFT SIDE -->
+    <div class="generate-left">
+
+        <form method="post"
+              action="/verify"
+              enctype="multipart/form-data"
+              class="verify-form">
+
+            <div class="panel-title">1. Original prompt</div>
+
+            <label for="prompt">Prompt used to generate the image</label>
+            <textarea
+                id="prompt"
+                name="prompt"
+                placeholder="e.g. a cinematic photograph of a rabbit in a room"
+            >{{ prompt or '' }}</textarea>
+
+            <p class="generate-note" style="text-align:left;">
+                The prompt is stored with the verification result as contextual information.
+            </p>
+
+            <div class="panel-title second">2. Upload image</div>
+
+            <div class="upload-box">
+                <p class="upload-title">Choose an image to verify</p>
+                <p class="upload-subtitle">PNG, JPG, JPEG, or WEBP</p>
+                <input
+                    id="image"
+                    name="image"
+                    type="file"
+                    class="upload-input"
+                    accept=".png,.jpg,.jpeg,.webp"
+                    required
+                >
+            </div>
+
+            <div class="panel-title second">3. Watermark Check</div>
+
+            <div class="verify-note">
+                The uploaded image will be checked for the ROBIN watermark.
+                Image Signature information is checked separately below.
+            </div>
+
+            <button type="submit" class="generate-btn" id="verifyBtn">
+                Verify Image
+            </button>
+
+            <p id="verifyLoading" class="generate-note" style="display:none;">
+                Verifying watermark. Please wait...
+            </p>
+        </form>
+    </div>
+
+    <!-- RIGHT SIDE -->
+    <div class="generate-right">
+
+        <div class="preview-header">
+            <div class="preview-title">Image preview</div>
+            <div class="preview-tag">Preview</div>
+        </div>
+
+        <div class="preview-box large">
+            {% if preview_url %}
+                <img
+                    src="{{ preview_url }}"
+                    alt="Preview image"
+                    style="max-width:100%; max-height:100%; border-radius:18px; object-fit:contain;"
+                >
+            {% else %}
+                <div class="preview-placeholder">
+                    Uploaded image will appear here
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="result-strip">
+            <div class="result-item">
+                <span>Watermark result</span>
+                <strong>
+                    {% if detected is sameas true %}
+                        Watermark detected
+                    {% elif detected is sameas false %}
+                        No watermark detected
+                    {% endif %}
+                </strong>
+            </div>
+
+            <div class="result-item">
+                <span>Detection score</span>
+                <strong>
+                    {% if detection_score is not none %}
+                        {{ detection_score }}
+                    {% else %}
+                        --
+                    {% endif %}
+                </strong>
+            </div>
+
+            <div class="result-item">
+                <span>Verification time</span>
+                <strong>
+                    {% if verification_time is not none %}
+                        {{ verification_time }} s
+                    {% else %}
+                        --
+                    {% endif %}
+                </strong>
+            </div>
+        </div>
+
+        <!-- IMAGE SIGNATURE CHECK -->
+        <div class="verify-note" style="margin-top:20px;">
+
+            <div class="panel-title">
+                Image Signature
+            </div>
+
+            <div class="result-strip">
+
+                <div class="result-item">
+                    <span>Signature</span>
+
+                    <strong>
+                        {% if signature_valid %}
+                            Verified
+                        {% elif signature_found %}
+                            Invalid
+                        {% else %}
+                            Not found
+                        {% endif %}
+                    </strong>
+                </div>
+
+                <div class="result-item">
+                    <span>Integrity</span>
+
+                    <strong>
+                        {% if signature_integrity_valid %}
+                            Unmodified
+                        {% elif signature_found %}
+                            Modified
+                        {% else %}
+                            --
+                        {% endif %}
+                    </strong>
+                </div>
+
+                <div class="result-item">
+                    <span>Image ID</span>
+
+                    <strong>
+                        {% if signature_record %}
+                            {{ signature_record.image_id }}
+                        {% else %}
+                            --
+                        {% endif %}
+                    </strong>
+                </div>
+
+            </div>
+
+            {% if signature_record %}
+
+                <div style="margin-top:14px;">
+
+                    <p>
+                        <strong>Creator:</strong>
+                        {{ signature_record.creator_id }}
+                    </p>
+
+                    <p>
+                        <strong>Method:</strong>
+                        {{ signature_record.method }}
+                    </p>
+
+                    <p>
+                        <strong>Created:</strong>
+                        {{ signature_record.created_utc }}
+                    </p>
+
+                </div>
+
+            {% endif %}
+
+            {% if signature_message %}
+
+                <p style="margin-top:14px;">
+                    {{ signature_message }}
+                </p>
+
+            {% endif %}
+
+        </div>
+
+        <div class="verify-note" style="margin-top:16px;">
+            The Watermark Check and Image Signature are separate checks.
+            The watermark indicates whether the ROBIN watermark is detectable,
+            while the Image Signature provides information about the image
+            source and whether the signed image has been modified.
+        </div>
+
+        {% if error %}
+            <div class="flash" style="margin-top:16px;">
+                <p>{{ error }}</p>
+            </div>
+        {% endif %}
+    </div>
+
+
+
+</section>
+
+<script>
+    const verifyForm = document.querySelector(".verify-form");
+    const verifyButton = document.getElementById("verifyBtn");
+    const verifyLoading = document.getElementById("verifyLoading");
+
+    if (verifyForm) {
+        verifyForm.addEventListener("submit", function () {
+            verifyButton.disabled = true;
+            verifyButton.textContent = "Verifying...";
+            verifyLoading.style.display = "block";
+        });
+    }
+</script>
+
+{% endblock %}

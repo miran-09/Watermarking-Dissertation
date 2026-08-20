@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="luxury-hero">
+    <div class="luxury-kicker">ROBIN Watermarking Platform</div>
+    <h1>Generate and verify AI watermarked images</h1>
+    <p>
+        A clean dissertation prototype for creating watermarked images with diffusion models
+        and checking whether the watermark survives image manipulations.
+    </p>
+
+    <div class="luxury-actions">
+        <a class="button-link" href="/generate">Generate Image</a>
+        <a class="button-link" href="/verify">Verify Image</a>
+    </div>
+</section>
+
+<section class="luxury-strip">
+    <div class="luxury-card">
+        <div class="luxury-card-title">Generate</div>
+        <p>Create a watermarked image from a text prompt.</p>
+    </div>
+
+    <div class="luxury-card">
+        <div class="luxury-card-title">Verify</div>
+        <p>Upload an image and check whether the watermark remains.</p>
+    </div>
+
+    <div class="luxury-card">
+        <div class="luxury-card-title">About</div>
+        <p>Read the dissertation story and the system idea.</p>
+    </div>
+</section>
+
+{% endblock %}

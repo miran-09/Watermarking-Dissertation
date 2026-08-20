@@ -1,4 +1,4 @@
-import argparse
+﻿import argparse
 from tqdm import tqdm
 
 import torch
@@ -14,7 +14,7 @@ def main(args):
 
     # load diffusion model
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    
+
     scheduler = DPMSolverMultistepScheduler.from_pretrained(args.model_id, subfolder='scheduler')
     pipe = InversableStableDiffusionPipeline.from_pretrained(
         args.model_id,
@@ -27,13 +27,13 @@ def main(args):
     # dataset
     dataset, prompt_key = get_dataset(args)
 
-    os.makedirs(args.save_path, exist_ok=True)  
+    os.makedirs(args.save_path, exist_ok=True)
 
     for i in tqdm(range(args.start, args.end)):
-        
+
         seed = i + args.gen_seed
         current_prompt = dataset[i][prompt_key]
-        
+
         ### generation
         # generation without watermarking
         set_random_seed(seed)
@@ -50,7 +50,7 @@ def main(args):
         orig_image_no_w = outputs_no_w.images[0]
         save_path = os.path.join(args.save_path, f'ori-lg{args.guidance_scale}-{i}.jpg')
         orig_image_no_w.save(save_path)
-        
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='diffusion watermark')
@@ -71,10 +71,16 @@ if __name__ == '__main__':
     parser.add_argument('--max_num_log_image', default=100, type=int)
     parser.add_argument('--gen_seed', default=0, type=int)
     parser.add_argument('--save_path', required=True, help='Path to save the generated images')
+    parser.add_argument(
+        "--prompt_file",
+        type=str,
+        default="prompts_100.txt",
+        help="Path to custom prompt file"
+    )
 
     args = parser.parse_args()
 
     if args.test_num_inference_steps is None:
         args.test_num_inference_steps = args.num_inference_steps
-    
+
     main(args)

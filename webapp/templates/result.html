@@ -1,0 +1,222 @@
+﻿{% extends "base.html" %}
+{% block content %}
+
+<section class="dash-hero">
+    <div class="dash-hero-text">
+        <div class="kicker">Result</div>
+        <h1>Generation complete</h1>
+        <p>The image generation request has been processed.</p>
+    </div>
+
+    <div class="dash-hero-panel">
+        <div class="mini-stat">
+            <span>Prompt</span>
+            <strong>{{ prompt }}</strong>
+        </div>
+        <div class="mini-stat">
+            <span>Method</span>
+            <strong>{{ method }}</strong>
+        </div>
+        <div class="mini-stat">
+            <span>Total generation time</span>
+            <strong>{{ runtime_sec }} s</strong>
+        </div>
+    </div>
+</section>
+
+<section class="dash-grid">
+    <div class="dash-card dash-card-large">
+        <div class="card-label">Preview</div>
+        <h2>Generated image</h2>
+
+        <div class="preview-box large">
+            {% if output_image %}
+                <img
+                    id="generatedImage"
+                    src="{{ url_for('outputs', filename=output_image) }}?v={{ runtime_sec }}"
+                    alt="Generated image"
+                    style="max-width: 100%; max-height: 100%; border-radius: 18px; object-fit: contain;"
+                >
+            {% else %}
+                <div class="preview-placeholder">
+                    Generated image will appear here
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="dash-card">
+        <div class="card-label">Summary</div>
+        <h3>Generation details</h3>
+
+        <div class="metric-row">
+            <div class="metric-box">
+                <span>Prompt</span>
+                <strong>{{ prompt }}</strong>
+            </div>
+            <div class="metric-box">
+                <span>Method</span>
+                <strong>{{ method }}</strong>
+            </div>
+            <div class="metric-box">
+                <span>Total time</span>
+                <strong>{{ runtime_sec }} s</strong>
+            </div>
+        </div>
+
+        <div class="metric-row" style="margin-top: 12px;">
+            <div class="metric-box">
+                <span>Predictor inference time</span>
+                <strong>
+                    {% if predictor_inference_sec %}
+                        {{ predictor_inference_sec }} s
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </strong>
+            </div>
+            <div class="metric-box">
+                <span>Status</span>
+                <strong>
+                    {% if ok %}
+                        Success
+                    {% else %}
+                        Pending
+                    {% endif %}
+                </strong>
+            </div>
+            <div class="metric-box">
+                <span>Seed</span>
+                <strong>
+                    {% if seed %}
+                        {{ seed }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </strong>
+            </div>
+        </div>
+
+        <!-- IMAGE SIGNATURE -->
+        <div class="metric-row" style="margin-top: 12px;">
+
+            <div class="metric-box">
+                <span>Image Signature</span>
+                <strong>
+                    {% if signature_added %}
+                        Signed
+                    {% else %}
+                        Not available
+                    {% endif %}
+                </strong>
+            </div>
+
+            <div class="metric-box">
+                <span>Image ID</span>
+                <strong>
+                    {% if image_id %}
+                        {{ image_id }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </strong>
+            </div>
+
+        </div>
+
+        <div class="result-actions" style="margin-top: 18px; display: flex; gap: 12px; flex-wrap: wrap;">
+            {% if output_image %}
+                <a class="button-link" href="{{ url_for('download_output', filename=output_image) }}">
+                    Download Image
+                </a>
+
+                <button type="button" class="button-link" id="copyImageBtn">
+                    Copy Image
+                </button>
+
+                <form method="post" action="{{ url_for('verify_generated') }}" style="display:inline;">
+                    <input type="hidden" name="filename" value="{{ output_image }}">
+                    <input type="hidden" name="prompt" value="{{ prompt }}">
+                    <button type="submit" class="button-link">
+                        Verify Image
+                    </button>
+                </form>
+            {% endif %}
+
+            <a class="button-link" href="/generate">Back to Generate</a>
+        </div>
+
+        {% if log_tail %}
+            <details style="margin-top: 16px;">
+                <summary style="cursor: pointer;">Show generation log</summary>
+                <pre>{{ log_tail }}</pre>
+            </details>
+        {% endif %}
+
+        {% if error %}
+            <div class="flash" style="margin-top: 16px;">
+                <p>{{ error }}</p>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<script>
+    const copyBtn = document.getElementById("copyImageBtn");
+
+    if (copyBtn) {
+        copyBtn.addEventListener("click", async () => {
+            try {
+                const imageEl = document.getElementById("generatedImage");
+                if (!imageEl) {
+                    throw new Error("No image found.");
+                }
+
+                const src = imageEl.currentSrc || imageEl.src;
+                const response = await fetch(src, { cache: "no-store" });
+                const blob = await response.blob();
+
+                const bitmap = await createImageBitmap(blob);
+                const canvas = document.createElement("canvas");
+                canvas.width = bitmap.width;
+                canvas.height = bitmap.height;
+
+                const ctx = canvas.getContext("2d");
+                if (!ctx) {
+                    throw new Error("Canvas not available.");
+                }
+
+                ctx.drawImage(bitmap, 0, 0);
+                if (bitmap.close) {
+                    bitmap.close();
+                }
+
+                const pngBlob = await new Promise((resolve, reject) => {
+                    canvas.toBlob((b) => {
+                        if (b) resolve(b);
+                        else reject(new Error("Could not convert image to PNG."));
+                    }, "image/png");
+                });
+
+                if (!navigator.clipboard || typeof ClipboardItem === "undefined") {
+                    throw new Error("Clipboard image support is not available in this browser.");
+                }
+
+                await navigator.clipboard.write([
+                    new ClipboardItem({ "image/png": pngBlob })
+                ]);
+
+                copyBtn.textContent = "Copied";
+                setTimeout(() => {
+                    copyBtn.textContent = "Copy Image";
+                }, 1500);
+
+            } catch (err) {
+                console.error(err);
+                alert("Could not copy image. Please use Download Image.");
+            }
+        });
+    }
+</script>
+
+{% endblock %}

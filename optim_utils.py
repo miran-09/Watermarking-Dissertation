@@ -1,4 +1,4 @@
-import torch
+﻿import torch
 import torch.nn.functional as F
 from torchvision import transforms
 from datasets import load_dataset
@@ -102,7 +102,7 @@ def image_distortion_multi(img1, img2, seed, attack):
         img1 = transforms.RandomResizedCrop(img1.size, scale=(0.75, 0.75), ratio=(0.75, 0.75))(img1)
         set_random_seed(seed)
         img2 = transforms.RandomResizedCrop(img2.size, scale=(0.75, 0.75), ratio=(0.75, 0.75))(img2)
-        
+
     if attack == '4':
         img1 = img1.filter(ImageFilter.GaussianBlur(radius=4))
         img2 = img2.filter(ImageFilter.GaussianBlur(radius=4))
@@ -156,37 +156,39 @@ def image_distortion_multi(img1, img2, seed, attack):
 
     return img1, img2
 
-def image_distortion(img1, img2, seed, attack):
+def image_distortion(img1, img2, seed, attack, jpeg_ratio=25, crop_scale=0.75, crop_ratio=0.75, gaussian_blur_r=4, rotation_angle=75, noise_std=0.1, color_jitter_brightness=6,):
+
     if attack == 'rotation':
-        img1 = transforms.RandomRotation((75, 75))(img1)
-        img2 = transforms.RandomRotation((75, 75))(img2)
+        img1 = transforms.RandomRotation((rotation_angle, rotation_angle))(img1)
+        img2 = transforms.RandomRotation((rotation_angle, rotation_angle))(img2)
 
     if attack == 'jpeg':
-        img1.save(f"tmp_{25}_{attack}.jpg", quality=25)
-        img1 = Image.open(f"tmp_{25}_{attack}.jpg")
-        img2.save(f"tmp_{25}_{attack}.jpg", quality=25)
-        img2 = Image.open(f"tmp_{25}_{attack}.jpg")
+        img1.save(f"tmp_{jpeg_ratio}_{attack}.jpg", quality=jpeg_ratio)
+        img1 = Image.open(f"tmp_{jpeg_ratio}_{attack}.jpg")
+        img2.save(f"tmp_{jpeg_ratio}_{attack}.jpg", quality=jpeg_ratio)
+        img2 = Image.open(f"tmp_{jpeg_ratio}_{attack}.jpg")
 
     if attack == 'cropping':
         set_random_seed(seed)
-        img1 = transforms.RandomResizedCrop(img1.size, scale=(0.75, 0.75), ratio=(0.75, 0.75))(img1)
+        img1 = transforms.RandomResizedCrop(img1.size, scale=(crop_scale, crop_scale), ratio=(crop_ratio, crop_ratio))(img1)
         set_random_seed(seed)
-        img2 = transforms.RandomResizedCrop(img2.size, scale=(0.75, 0.75), ratio=(0.75, 0.75))(img2)
-        
+        img2 = transforms.RandomResizedCrop(
+        img2.size, scale=(crop_scale, crop_scale), ratio=(crop_ratio, crop_ratio))(img2)
+
     if attack == 'blurring':
-        img1 = img1.filter(ImageFilter.GaussianBlur(radius=4))
-        img2 = img2.filter(ImageFilter.GaussianBlur(radius=4))
+        img1 = img1.filter(ImageFilter.GaussianBlur(radius=gaussian_blur_r))
+        img2 = img2.filter(ImageFilter.GaussianBlur(radius=gaussian_blur_r))
 
     if attack == 'noise':
         img_shape = np.array(img1).shape
-        g_noise = np.random.normal(0, 0.1, img_shape) * 255
+        g_noise = np.random.normal(0, noise_std, img_shape) * 255
         g_noise = g_noise.astype(np.uint8)
         img1 = Image.fromarray(np.clip(np.array(img1) + g_noise, 0, 255))
         img2 = Image.fromarray(np.clip(np.array(img2) + g_noise, 0, 255))
 
     if attack == 'color_jitter':
-        img1 = transforms.ColorJitter(brightness=6)(img1)
-        img2 = transforms.ColorJitter(brightness=6)(img2)
+        img1 = transforms.ColorJitter(brightness=color_jitter_brightness)(img1)
+        img2 = transforms.ColorJitter(brightness=color_jitter_brightness)(img2)
 
     return img1, img2
 
@@ -199,10 +201,10 @@ def measure_similarity(images, prompt, model, clip_preprocess, tokenizer, device
 
         text = tokenizer([prompt]).to(device)  # text = tokenizer([prompt]).to(device)
         text_features = model.encode_text(text)
-        
+
         image_features /= image_features.norm(dim=-1, keepdim=True)
         text_features /= text_features.norm(dim=-1, keepdim=True)
-        
+
         return (image_features @ text_features.T).mean(-1)
 
 def get_dataset(args):
@@ -214,12 +216,14 @@ def get_dataset(args):
             dataset = json.load(f)
             dataset = dataset['annotations']
             prompt_key = 'caption'
-    else:
-        # dataset = load_dataset(args.dataset)['test']
-        #dataset = load_dataset("parquet", data_files={'train': '/mnt/data/datasets/Gustavosta/Stable-Diffusion-Prompts/data/train.parquet', 'test': '/mnt/data/datasets/Gustavosta/Stable-Diffusion-Prompts/data/eval.parquet'})['test']
-        #prompt_key = 'Prompt'
+    elif args.dataset == "custom":
+        with open(args.prompt_file, "r", encoding="utf-8") as f:
+            prompts = [line.strip() for line in f if line.strip()]
 
-         # Local fallback prompts for testing on this PC
+        dataset = [{"Prompt": p} for p in prompts]
+        prompt_key = 'Prompt'
+    else:
+        # Local fallback prompts for testing on this PC
         dataset = [
             {"Prompt": "a photo of a red bicycle in a park"},
             {"Prompt": "a scenic mountain lake at sunrise"},
@@ -285,7 +289,7 @@ def get_watermarking_pattern(pipe, args, device, shape=None):
         for i in range(args.w_up_radius, args.w_low_radius, -1):
             tmp_mask = circle_mask(gt_init.shape[-1], r_max=args.w_up_radius, r_min=args.w_low_radius)
             tmp_mask = torch.tensor(tmp_mask).to(device)
-            
+
             for j in range(gt_patch.shape[1]):
                 gt_patch[:, j, tmp_mask] = gt_patch_tmp[0, j, 0, i].item()
     elif 'seed_zeros' in args.w_pattern:
@@ -304,13 +308,13 @@ def get_watermarking_pattern(pipe, args, device, shape=None):
         gt_patch = torch.fft.fftshift(torch.fft.fft2(gt_init), dim=(-1, -2))
 
         gt_patch_tmp = copy.deepcopy(gt_patch)
-        for i in range(args.w_up_radius, args.w_low_radius, -1):  
+        for i in range(args.w_up_radius, args.w_low_radius, -1):
             tmp_mask = circle_mask(gt_init.shape[-1],r_max=i,r_min=args.w_low_radius)
             tmp_mask = torch.tensor(tmp_mask).to(device)
-            
+
             for j in range(gt_patch.shape[1]):
                 gt_patch[:, j, tmp_mask] = gt_patch_tmp[0, j, 0, i].item()
-        
+
     return gt_patch
 
 
@@ -385,7 +389,7 @@ def error_nmse(orig,recon):
 def error_map(orig, recon, scale=1):
     orig = to_numpy(orig).astype(np.float32)
     recon = to_numpy(recon).astype(np.float32)
-    error = orig - recon    
+    error = orig - recon
     error_map = ((error * scale + 127).clip(0,255).astype(np.uint8))
     return error_map
 

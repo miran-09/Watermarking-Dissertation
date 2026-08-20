@@ -1,0 +1,33 @@
+# Core environment
+numpy==1.26.4
+Pillow==12.3.0
+scipy==1.15.3
+matplotlib==3.10.9
+tqdm==4.68.4
+
+# Deep learning
+transformers==4.30.2
+diffusers==0.11.1
+accelerate==0.12.0
+datasets==5.0.0
+
+# Evaluation / metrics
+scikit-learn==1.7.2
+scikit-image==0.25.2
+pytorch-msssim==1.0.0
+
+# Image Signature
+cryptography==50.0.0
+
+# Supporting utilities
+huggingface-hub==0.25.2
+ftfy==6.3.1
+regex==2026.7.10
+wandb==0.28.0
+
+# Web application
+Flask==3.1.3
+
+# PyTorch with CUDA 11.7 was used for this project.
+# Install PyTorch separately before installing the packages above:
+# pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 --extra-index-url https://download.pytorch.org/whl/cu117

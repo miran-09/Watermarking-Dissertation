@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="luxury-hero">
+    <div class="luxury-kicker">Generate Image</div>
+    <h1>Generate watermarked images</h1>
+    <p>
+        Create a watermarked AI image from a prompt using either the learned predictor or the original ROBIN method.
+    </p>
+</section>
+
+{% if error %}
+<div class="flash">
+    <p>{{ error }}</p>
+</div>
+{% endif %}
+
+<section class="generate-shell">
+    <div class="generate-left">
+        <div class="panel-title">1. Prompt</div>
+
+        <form method="post" action="/generate" class="generate-form">
+            <label for="prompt">Describe the image you want to generate</label>
+            <textarea
+                id="prompt"
+                name="prompt"
+                placeholder="e.g. a cinematic photo of a red bicycle in a park at sunset"
+            ></textarea>
+
+            <div class="panel-title second">2. Generation method</div>
+
+            <div class="method-grid">
+                <label class="method-card">
+                    <input type="radio" name="method" value="predictor" checked>
+                    <div class="method-name">Predictor</div>
+                    <div class="method-desc">Fast</div>
+                    <div class="method-note">Recommended</div>
+                </label>
+
+                <label class="method-card">
+                    <input type="radio" name="method" value="robin">
+                    <div class="method-name">ROBIN</div>
+                    <div class="method-desc">Original method</div>
+                    <div class="method-note">Baseline</div>
+                </label>
+            </div>
+
+            <details class="advanced-box">
+                <summary>3. Advanced options</summary>
+                <div class="advanced-fields">
+                    <label for="seed">Seed (optional)</label>
+                    <input id="seed" name="seed" type="text" placeholder="999999">
+                </div>
+            </details>
+
+            <button type="submit" class="generate-btn" id="generateBtn">Generate Image</button>
+            <p id="loadingText" style="display:none; margin-top:12px; color:#c59e5b;">
+                Generating image, please wait...
+            </p>
+
+            <script>
+                const form = document.querySelector(".generate-form");
+                const btn = document.getElementById("generateBtn");
+                const loadingText = document.getElementById("loadingText");
+
+                form.addEventListener("submit", () => {
+                    btn.disabled = true;
+                    btn.textContent = "Generating...";
+                    loadingText.style.display = "block";
+                });
+            </script>
+
+            <p class="generate-note">
+                The watermark will be embedded in the generated image.
+            </p>
+        </form>
+    </div>
+
+    <div class="generate-right">
+        <div class="preview-header">
+            <div class="preview-title">Generated image</div>
+            <div class="preview-tag">Preview</div>
+        </div>
+
+        <div class="preview-box large">
+            <div class="preview-placeholder">
+                Generated image will appear here
+            </div>
+        </div>
+
+        <div class="result-strip">
+            <div class="result-item">
+                <span>Watermark</span>
+                <strong>Embedded</strong>
+            </div>
+            <div class="result-item">
+                <span>Generation time</span>
+                <strong>--</strong>
+            </div>
+            <div class="result-item">
+                <span>Method</span>
+                <strong>Predictor</strong>
+            </div>
+        </div>
+
+        <div class="download-row">
+            <a href="#" class="download-btn">Download image</a>
+            <a href="#" class="copy-btn">Copy</a>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

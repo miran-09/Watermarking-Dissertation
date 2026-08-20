@@ -1,0 +1,108 @@
+﻿{% extends "base.html" %}
+{% block content %}
+
+<section class="luxury-hero">
+    <div class="luxury-kicker">About</div>
+    <h1>Efficient watermark generation for diffusion models</h1>
+    <p>
+        This dissertation prototype demonstrates how watermarked images can be generated and
+        verified through a clean browser interface. The main research contribution is efficiency by
+        replacing ROBINâ€™s iterative prompt optimisation with a learned predictor that estimates
+        the optimised embedding in one forward pass. An additional mage Signature mechanism
+        provides source and integrity information for generated images.
+    </p>
+</section>
+
+<section class="about-workflow">
+    <div>Prompt</div>
+    <div>â†’</div>
+    <div>Predictor / ROBIN</div>
+    <div>â†’</div>
+    <div>Stable Diffusion</div>
+    <div>â†’</div>
+    <div>Watermarked Image + Image Signature</div>
+    <div>â†’</div>
+    <div>Verify</div>
+</section>
+
+<section class="about-grid">
+    <div class="about-card">
+        <div class="panel-title">Project focus</div>
+        <p>
+            The system focuses on generating watermarked images with an associated
+            Image Signature, and verifying both watermark presence and image integrity
+            after generation or image manipulation.
+        </p>
+    </div>
+
+    <div class="about-card">
+        <div class="panel-title">Research contribution</div>
+        <p>
+            The proposed Prompt Embedding Predictor reduces ROBIN's iterative
+            optimisation cost by estimating the optimised embedding in a single
+            forward pass. The Image Signature layer additionally provides source
+            and integrity information during verification.
+        </p>
+    </div>
+
+    <div class="about-card">
+        <div class="panel-title">Watermark Check</div>
+        <p>
+            The watermark verification process checks an uploaded image for the
+            ROBIN watermark. The recovered watermark pattern is compared with the
+            expected pattern to determine whether the supported watermark is
+            detectable.
+        </p>
+    </div>
+
+    <div class="about-card">
+        <div class="panel-title">Image Signature</div>
+        <p>
+            Generated images also contain an Image Signature with information such
+            as an image identifier, creator identifier, generation method and
+            creation time. During verification, the signature is checked separately
+            from the ROBIN watermark to determine whether the signed image content
+            has been modified.
+        </p>
+    </div>
+</section>
+
+<section class="about-acknowledgement">
+    <div class="panel-title">Foundation & acknowledgement</div>
+
+    <p>
+        This project is built on the ROBIN watermarking framework:
+        <strong>
+            Huang, H., Wu, Y., & Wang, Q. (2024).
+            ROBIN: Robust and Invisible Watermarks for Diffusion Models with Adversarial Optimization.
+            NeurIPS 2024.
+        </strong>
+    </p>
+
+    <p>
+        The original ROBIN research and publicly released codebase were used as the foundation
+        for the implementation and experimental evaluation in this dissertation. The proposed
+        Prompt Embedding Predictor is an extension developed in this project to reduce the
+        computational cost of ROBIN's iterative prompt-embedding optimisation.
+    </p>
+
+    <div class="about-links">
+        <a
+            href="https://openreview.net/forum?id=RvoxlFvnlX"
+            target="_blank"
+            rel="noopener noreferrer"
+        >
+            View ROBIN paper
+        </a>
+
+        <a
+            href="https://github.com/Hannah1102/ROBIN"
+            target="_blank"
+            rel="noopener noreferrer"
+        >
+            View ROBIN codebase
+        </a>
+    </div>
+</section>
+
+{% endblock %}

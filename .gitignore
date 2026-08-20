@@ -1,31 +1,94 @@
+# ============================================================
 # Python
+# ============================================================
+
 __pycache__/
 *.py[cod]
+*$py.class
 
 # Virtual environments
 .venv/
 venv/
+env/
+ENV/
 
-# VS Code
+# ============================================================
+# IDE / Editor
+# ============================================================
+
 .vscode/
+.idea/
 
-# Generated outputs
-clean_images/
-generated_imgs/
-logs/
-output/
+# ============================================================
+# Model checkpoints / large binary files
+# ============================================================
 
-# Model checkpoints
-ckpts/
-
-# Temporary files
-tmp_*.jpg
-
-# Large model files
 *.pt
 *.pth
 *.ckpt
 *.safetensors
+*.bin
 
-# Hugging Face cache
-.cache/
+# Project checkpoints
+ckpts/
+benchmark_ckpts/
+
+# ============================================================
+# Generated images / datasets / outputs
+# ============================================================
+
+clean_images/
+clean_images_run*/
+clean_images_test/
+
+generated_imgs/
+output/
+outputs/
+
+results/
+logs/
+
+# Temporary images
+tmp_*.jpg
+tmp_*.jpeg
+tmp_*.png
+tmp_*.webp
+
+# ============================================================
+# Python / ML experiment files
+# ============================================================
+
+*.pkl
+*.pickle
+
+# ============================================================
+# Local configuration / secrets
+# ============================================================
+
+.env
+.env.*
+*.key
+*.pem
+
+# ============================================================
+# System files
+# ============================================================
+
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ============================================================
+# Web application runtime files
+# ============================================================
+
+webapp/outputs/
+webapp/uploads/
+webapp/runtime/
+webapp/logs/
+webapp/**/__pycache__/
+
+# Image-signature cryptographic keys
+webapp/signature_keys/
+*.pem
+*.key

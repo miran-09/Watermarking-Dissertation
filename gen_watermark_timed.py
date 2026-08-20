@@ -8,6 +8,7 @@ from collections import defaultdict
 import pickle
 import numpy as np
 from PIL import Image
+import time
 
 import torch
 from accelerate.logging import get_logger
@@ -130,7 +131,22 @@ def main(args):
     init_latents_w = pipe.get_random_latents()
     opt_watermark = get_watermarking_pattern(pipe, args, device)  # random generate an initial watermark
     mask = get_watermarking_mask(init_latents_w, args, device).detach().cpu()
-    pipe.optimizer_wm_prompt(train_dataloader,hyperparameters, mask,opt_watermark,save_path,args)
+    #pipe.optimizer_wm_prompt(train_dataloader,hyperparameters, mask,opt_watermark,save_path,args)
+
+    start_time = time.perf_counter()
+    opt_wm, opt_acond = pipe.optimizer_wm_prompt(
+        train_dataloader,
+        hyperparameters,
+        mask,
+        opt_watermark,
+        save_path,
+        args
+    )
+    elapsed = time.perf_counter() - start_time
+
+    print(f"ROBIN optimizer runtime: {elapsed:.2f} seconds")
+    with open("watermark_optimizer_runtime.txt", "a", encoding="utf-8") as f:
+        f.write(f"{args.data_root}\t{elapsed:.3f} seconds\n")
 
 
 
@@ -148,12 +164,6 @@ if __name__ == '__main__':
     parser.add_argument('--test_num_inference_steps', default=None, type=int)
     parser.add_argument('--max_num_log_image', default=100, type=int)
     parser.add_argument('--gen_seed', default=0, type=int)
-    parser.add_argument(
-        "--prompt_file",
-        type=str,
-        default="prompts_100.txt",
-        help="Path to custom prompt file"
-    )
 
     # watermark
     parser.add_argument('--w_seed', default=999999, type=int)  # 999999
